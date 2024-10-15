@@ -20,7 +20,7 @@ def my_team():
     e.g.  [ (1234567, 'Ada', 'Lovelace'), (1234568, 'Grace', 'Hopper'), (1234569, 'Eva', 'Tardos') ]
     '''
 
-    raise NotImplementedError()
+    return [(9319638, 'Zhiyun', 'Pan'), (11679719, 'Weng Chong', 'Lao')]
  
 
 def taboo_cells(warehouse):
