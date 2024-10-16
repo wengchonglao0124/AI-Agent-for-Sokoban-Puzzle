@@ -67,28 +67,48 @@ def taboo_cells(warehouse):
             corner: WarehouseCell = dead_corner_list[row][col]
             corner_pos: (int, int) = corner.getPos()
 
+            # Horizontal check
             x_free_dir_list: [(int, int)] = corner.getXFreeDir()
             if x_free_dir_list:
+                # Rule 1 ----------------------------------------------------------------------------------------------
                 walls_in_row: [(int, int)] = [coordinate for coordinate in walls if coordinate[1] == corner_pos[1]]
                 for wall_pos in walls_in_row:
                     if checkVectorDirection(corner_pos, wall_pos, x_free_dir_list[0]):
                         taboo_cell_set.add(corner_pos)
                         break
 
+                # Rule 2 ----------------------------------------------------------------------------------------------
+                if col + 1 < num_of_item:
+                    corner_next: WarehouseCell = dead_corner_list[row][col + 1]
+                    corner_next_pos: (int, int) = corner_next.getPos()
+                    x_free_dir_list_next: [(int, int)] = corner_next.getXFreeDir()
+
+                    if x_free_dir_list_next:
+                        if x_free_dir_list[0] == (1, 0) and checkOppositeVector(x_free_dir_list[0], x_free_dir_list_next[0]):
+                            empty_space_list: [(int, int)] = []
+                            for x_index in range(corner_pos[0] + 1, corner_next_pos[0]):
+                                if isTarget(x_index, corner_pos[1], targets):
+                                    empty_space_list = []
+                                    break
+                                else:
+                                    cell: WarehouseCell = createWarehouseCell(x_index, corner_pos[1], walls)
+                                    empty_space_list.append(cell)
+                            if empty_space_list:
+                                if checkContinueWalls(empty_space_list, (0, -1)) or checkContinueWalls(empty_space_list, (0, 1)):
+                                    for empty_space in empty_space_list:
+                                        taboo_cell_set.add(empty_space.getPos())
+
+            # Vertical check
             y_free_dir_list: [(int, int)] = corner.getYFreeDir()
             if y_free_dir_list:
+                # Rule 1 ----------------------------------------------------------------------------------------------
                 walls_in_col: [(int, int)] = [coordinate for coordinate in walls if coordinate[0] == corner_pos[0]]
                 for wall_pos in walls_in_col:
                     if checkVectorDirection(corner_pos, wall_pos, y_free_dir_list[0]):
                         taboo_cell_set.add(corner_pos)
                         break
 
-            # if x_free_dir_list and col + 1 < num_of_item:
-            #     corner_next: WarehouseCell = dead_corner_list[row][col + 1]
-            #     x_free_dir_list_next: [(int, int)] = corner_next.getXFreeDir()
-            #     if x_free_dir_list_next:
-            #         if x_free_dir_list[0][0] + x_free_dir_list_next[0][0] == 0:
-            #             pass
+                # Rule 2 ----------------------------------------------------------------------------------------------
 
     return getTabooMapString(num_of_row, num_of_col, walls, list(taboo_cell_set))
 
@@ -167,6 +187,16 @@ def checkVectorDirection(point1: (int, int), point2: (int, int), direction: (int
     magnitude = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
     unit_vector: (int, int) = (vector[0] / magnitude, vector[1] / magnitude)
     return unit_vector[0] == direction[0] and unit_vector[1] == direction[1]
+
+def checkOppositeVector(vector1: (int, int), vector2: (int, int)) -> bool:
+    return vector1[0] == -vector2[0] and vector1[1] == -vector2[1]
+
+def checkContinueWalls(cells: [WarehouseCell], wall_direction: (int, int)) -> bool:
+    for cell in cells:
+        free_dir: [(int, int)] = cell.getXFreeDir() if wall_direction[0] != 0 else cell.getYFreeDir()
+        if wall_direction in free_dir:
+            return False
+    return True
 
 
 class SokobanPuzzle(search.Problem):
