@@ -137,6 +137,11 @@ def taboo_cells(warehouse):
     return getTabooMapString(num_of_row, num_of_col, walls, list(taboo_cell_set))
 
 
+WALL = '#'
+TABOO_CELL = 'X'
+BOX = '$'
+EMPTY = ' '
+
 class WarehouseCell(object):
     def __init__(self, x: int, y: int, free_dir: [(int, int)]):
         self.x: int = x
@@ -190,10 +195,6 @@ def createWarehouseCell(x: int, y: int, walls: [(int, int)]) -> WarehouseCell:
     return WarehouseCell(x, y, free_dir)
 
 def getTabooMapString(num_of_row: int, num_of_col: int, walls: [(int, int)], taboo_cell_list: [(int, int)]) -> str:
-    WALL = '#'
-    TABOO_CELL = 'X'
-    EMPTY = ' '
-
     taboo_map = [[EMPTY for _ in range(num_of_col)] for _ in range(num_of_row)]
     for x, y in walls:
         taboo_map[y][x] = WALL
@@ -253,8 +254,13 @@ class SokobanPuzzle(search.Problem):
     
     '''
     
-    def __init__(self, warehouse):
-        raise NotImplementedError()
+    def __init__(self, warehouse, allow_taboo_push=False, macro=False):
+        self.warehouse: sokoban.Warehouse = warehouse
+        self.allow_taboo_push: bool = allow_taboo_push
+        self.macro: bool = macro
+
+        initial: ((int, int), [(int, int)]) = warehouse.worker, warehouse.boxes
+        super().__init__(initial)
 
     def actions(self, state):
         """
@@ -264,8 +270,34 @@ class SokobanPuzzle(search.Problem):
         'self.allow_taboo_push' and 'self.macro' should be tested to determine
         what type of list of actions is to be returned.
         """
-        raise NotImplementedError
+        worker_pos, boxes = state
+        current_warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
 
+        taboo_map = None
+        if not self.allow_taboo_push:
+            taboo_map = taboo_cells(current_warehouse)
+
+        available_actions: [str] = []
+        for action in movements.keys():
+            predicted_map: str = check_action_seq(current_warehouse, [action])
+            if predicted_map != 'Failure':
+                available_actions.append(action)
+
+                if taboo_map is not None:
+                    for cell_predicted, cell_taboo in zip(predicted_map, taboo_map):
+                        if cell_predicted == BOX and cell_taboo == TABOO_CELL:
+                            available_actions.remove(action)
+                            break
+
+        return available_actions
+
+
+movements = {
+    'Up': (0, -1),
+    'Down': (0, 1),
+    'Left': (-1, 0),
+    'Right': (1, 0)
+}
 
 def check_action_seq(warehouse, action_seq):
     '''
@@ -293,13 +325,6 @@ def check_action_seq(warehouse, action_seq):
     worker_pos: (int, int) = warehouse.worker
     boxes: [(int, int)] = warehouse.boxes[:]
     walls: [(int, int)] = warehouse.walls[:]
-
-    movements = {
-        'Up': (0, -1),
-        'Down': (0, 1),
-        'Left': (-1, 0),
-        'Right': (1, 0)
-    }
 
     for action in action_seq:
         dx, dy = movements[action]
