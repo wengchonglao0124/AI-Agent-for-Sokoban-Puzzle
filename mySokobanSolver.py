@@ -8,8 +8,7 @@ You are not allowed to change the defined interfaces.
 That is, changing the formal parameters of a function will break the 
 interface and triggers to a fail for the test of your code.
 '''
-
-
+import math
 import search
 import sokoban
 
@@ -44,8 +43,130 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.  
     '''
-    ##         "INSERT YOUR CODE HERE"    
-    raise NotImplementedError()
+    walls: [(int, int)] = warehouse.walls
+    targets: [(int, int)] = warehouse.targets
+    taboo_cell_set: set[(int, int)] = set()
+
+    num_of_row, num_of_col = (max(y for _, y in walls) + 1), (max(x for x, _ in walls) + 1)
+
+    dead_corner_list: [[WarehouseCell]] = []
+    for y in range(num_of_row):
+        dead_corner_list.append([])
+        for x in range(num_of_col):
+            if not isWall(x, y, walls):
+                warehouse_cell: WarehouseCell = createWarehouseCell(x, y, walls)
+                if isDeadCorner(warehouse_cell) and not isTarget(x, y, targets):
+                    dead_corner_list[-1].append(warehouse_cell)
+        if not dead_corner_list[-1]:
+            dead_corner_list.pop() # remove empty row
+
+    for row in range(len(dead_corner_list)):
+        num_of_item = len(dead_corner_list[row])
+
+        for col in range(num_of_item):
+            corner: WarehouseCell = dead_corner_list[row][col]
+            corner_pos: (int, int) = corner.getPos()
+
+            x_free_dir_list: [(int, int)] = corner.getXFreeDir()
+            if x_free_dir_list:
+                walls_in_row: [(int, int)] = [coordinate for coordinate in walls if coordinate[1] == corner_pos[1]]
+                for wall_pos in walls_in_row:
+                    if checkVectorDirection(corner_pos, wall_pos, x_free_dir_list[0]):
+                        taboo_cell_set.add(corner_pos)
+                        break
+
+            y_free_dir_list: [(int, int)] = corner.getYFreeDir()
+            if y_free_dir_list:
+                walls_in_col: [(int, int)] = [coordinate for coordinate in walls if coordinate[0] == corner_pos[0]]
+                for wall_pos in walls_in_col:
+                    if checkVectorDirection(corner_pos, wall_pos, y_free_dir_list[0]):
+                        taboo_cell_set.add(corner_pos)
+                        break
+
+            # if x_free_dir_list and col + 1 < num_of_item:
+            #     corner_next: WarehouseCell = dead_corner_list[row][col + 1]
+            #     x_free_dir_list_next: [(int, int)] = corner_next.getXFreeDir()
+            #     if x_free_dir_list_next:
+            #         if x_free_dir_list[0][0] + x_free_dir_list_next[0][0] == 0:
+            #             pass
+
+    return getTabooMapString(num_of_row, num_of_col, walls, list(taboo_cell_set))
+
+
+class WarehouseCell(object):
+    def __init__(self, x: int, y: int, free_dir: [(int, int)]):
+        self.x: int = x
+        self.y: int = y
+        self.free_dir: [(int, int)] = free_dir
+
+    def getPos(self) -> (int, int):
+        return (self.x, self.y)
+
+    def getNumOfAllFreeDir(self) -> int:
+        return len(self.free_dir)
+
+    def getAllFreeDir(self) -> [(int, int)]:
+        return self.free_dir
+
+    def getXFreeDir(self) -> [(int, int)]:
+        return [(x, y) for x, y in self.free_dir if x != 0]
+
+    def getNumOfXFreeDir(self) -> int:
+        return len(self.getXFreeDir())
+
+    def getYFreeDir(self) -> [(int, int)]:
+        return [(x, y) for x, y in self.free_dir if y != 0]
+
+    def getNumOfYFreeDir(self) -> int:
+        return len(self.getYFreeDir())
+
+def isWall(x: int, y: int, walls: [(int, int)]) -> bool:
+    return (x, y) in walls
+
+def isTarget(x: int, y: int, targets: [(int, int)]) -> bool:
+    return (x, y) in targets
+
+def isDeadCorner(cell: WarehouseCell) -> bool:
+    if cell.getNumOfAllFreeDir() <= 2:
+        if cell.getNumOfXFreeDir() <= 1 and cell.getNumOfYFreeDir() <= 1:
+            return True
+    return False
+
+def createWarehouseCell(x: int, y: int, walls: [(int, int)]) -> WarehouseCell:
+    free_dir: [(int, int)] = []
+    if not isWall(x - 1, y, walls):
+        free_dir.append((-1, 0)) # x negative direction - Left
+    if not isWall(x + 1, y, walls):
+        free_dir.append((1, 0)) # x positive direction - Right
+    if not isWall(x, y - 1, walls):
+        free_dir.append((0, -1)) # y negative direction - Top
+    if not isWall(x, y + 1, walls):
+        free_dir.append((0, 1)) # y positive direction - Down
+
+    return WarehouseCell(x, y, free_dir)
+
+def getTabooMapString(num_of_row: int, num_of_col: int, walls: [(int, int)], taboo_cell_list: [(int, int)]) -> str:
+    WALL = '#'
+    TABOO_CELL = 'X'
+    EMPTY = ' '
+
+    taboo_map = [[EMPTY for _ in range(num_of_col)] for _ in range(num_of_row)]
+    for x, y in walls:
+        taboo_map[y][x] = WALL
+    for x, y in taboo_cell_list:
+        taboo_map[y][x] = TABOO_CELL
+
+    result_list: [str] = [(''.join(row_list) + "\n") for row_list in taboo_map]
+    result = ''.join(result_list)
+    return result.rstrip('\n')
+
+def checkVectorDirection(point1: (int, int), point2: (int, int), direction: (int, int)) -> bool:
+    x1, y1 = point1
+    x2, y2 = point2
+    vector: (int, int) = (x2 - x1, y2 - y1)
+    magnitude = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+    unit_vector: (int, int) = (vector[0] / magnitude, vector[1] / magnitude)
+    return unit_vector[0] == direction[0] and unit_vector[1] == direction[1]
 
 
 class SokobanPuzzle(search.Problem):
