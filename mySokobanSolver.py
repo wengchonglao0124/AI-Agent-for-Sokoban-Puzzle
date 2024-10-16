@@ -49,22 +49,23 @@ def taboo_cells(warehouse):
 
     num_of_row, num_of_col = (max(y for _, y in walls) + 1), (max(x for x, _ in walls) + 1)
 
-    dead_corner_list: [[WarehouseCell]] = []
+    # Extract all possible dead-end corners
+    dead_corner_space: [[WarehouseCell]] = []
     for y in range(num_of_row):
-        dead_corner_list.append([])
+        dead_corner_space.append([])
         for x in range(num_of_col):
             if not isWall(x, y, walls):
                 warehouse_cell: WarehouseCell = createWarehouseCell(x, y, walls)
                 if isDeadCorner(warehouse_cell) and not isTarget(x, y, targets):
-                    dead_corner_list[-1].append(warehouse_cell)
-        if not dead_corner_list[-1]:
-            dead_corner_list.pop() # remove empty row
+                    dead_corner_space[-1].append(warehouse_cell)
+        if not dead_corner_space[-1]:
+            dead_corner_space.pop() # remove empty row
 
-    for row in range(len(dead_corner_list)):
-        num_of_item = len(dead_corner_list[row])
-
+    # Determine all possible taboo cells
+    for row in range(len(dead_corner_space)):
+        num_of_item = len(dead_corner_space[row])
         for col in range(num_of_item):
-            corner: WarehouseCell = dead_corner_list[row][col]
+            corner: WarehouseCell = dead_corner_space[row][col]
             corner_pos: (int, int) = corner.getPos()
 
             # Horizontal check
@@ -79,7 +80,7 @@ def taboo_cells(warehouse):
 
                 # Rule 2 ----------------------------------------------------------------------------------------------
                 if col + 1 < num_of_item:
-                    corner_next: WarehouseCell = dead_corner_list[row][col + 1]
+                    corner_next: WarehouseCell = dead_corner_space[row][col + 1]
                     corner_next_pos: (int, int) = corner_next.getPos()
                     x_free_dir_list_next: [(int, int)] = corner_next.getXFreeDir()
 
@@ -109,6 +110,29 @@ def taboo_cells(warehouse):
                         break
 
                 # Rule 2 ----------------------------------------------------------------------------------------------
+                dead_corner_list_vertical: [WarehouseCell] = [dead_corner_cell for dead_corner_row in dead_corner_space for dead_corner_cell in dead_corner_row if dead_corner_cell.getPos()[0] == corner_pos[0] and dead_corner_cell.getPos()[1] > corner_pos[1]]
+                dead_corner_list_vertical: [WarehouseCell] = sorted(dead_corner_list_vertical, key=lambda dead_corner_cell: dead_corner_cell.getPos()[1])
+                num_of_dead_corner_vertical: int = len(dead_corner_list_vertical)
+
+                if num_of_dead_corner_vertical > 0:
+                    corner_next: WarehouseCell = dead_corner_list_vertical[0]
+                    corner_next_pos: (int, int) = corner_next.getPos()
+                    y_free_dir_list_next: [(int, int)] = corner_next.getYFreeDir()
+
+                    if y_free_dir_list_next:
+                        if y_free_dir_list[0] == (0, 1) and checkOppositeVector(y_free_dir_list[0], y_free_dir_list_next[0]):
+                            empty_space_list: [(int, int)] = []
+                            for y_index in range(corner_pos[1] + 1, corner_next_pos[1]):
+                                if isTarget(corner_pos[0], y_index, targets):
+                                    empty_space_list = []
+                                    break
+                                else:
+                                    cell: WarehouseCell = createWarehouseCell(corner_pos[0], y_index, walls)
+                                    empty_space_list.append(cell)
+                            if empty_space_list:
+                                if checkContinueWalls(empty_space_list, (-1, 0)) or checkContinueWalls(empty_space_list, (1, 0)):
+                                    for empty_space in empty_space_list:
+                                        taboo_cell_set.add(empty_space.getPos())
 
     return getTabooMapString(num_of_row, num_of_col, walls, list(taboo_cell_set))
 
