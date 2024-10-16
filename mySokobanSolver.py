@@ -290,10 +290,43 @@ def check_action_seq(warehouse, action_seq):
                the sequence of actions.  This must be the same string as the
                string returned by the method  Warehouse.__str__()
     '''
-    
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    worker_pos: (int, int) = warehouse.worker
+    boxes: [(int, int)] = warehouse.boxes[:]
+    walls: [(int, int)] = warehouse.walls[:]
+
+    movements = {
+        'Up': (0, -1),
+        'Down': (0, 1),
+        'Left': (-1, 0),
+        'Right': (1, 0)
+    }
+
+    for action in action_seq:
+        dx, dy = movements[action]
+        worker_pos_new: (int, int) = (worker_pos[0] + dx, worker_pos[1] + dy)
+
+        # worker walk into a wall
+        if worker_pos_new in walls:
+            return 'Failure'
+
+        if worker_pos_new in boxes:
+            behind_pos: (int, int) = (worker_pos_new[0] + dx, worker_pos_new[1] + dy)
+
+            # worker push one box into a wall
+            if behind_pos in walls:
+                return 'Failure'
+
+            # worker push two boxes at the same time
+            if behind_pos in boxes:
+                return 'Failure'
+
+            boxes.remove(worker_pos_new)
+            boxes.append(behind_pos)
+
+        worker_pos = worker_pos_new
+
+    warehouse_new: sokoban.Warehouse = warehouse.copy(worker_pos, boxes)
+    return warehouse_new.__str__()
 
 
 def solve_sokoban_elem(warehouse):
