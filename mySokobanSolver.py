@@ -288,8 +288,19 @@ class SokobanPuzzle(search.Problem):
                         if cell_predicted == BOX and cell_taboo == TABOO_CELL:
                             available_actions.remove(action)
                             break
-
         return available_actions
+
+    def result(self, state, action):
+        available_actions: [str] = self.actions(state)
+        if action not in available_actions:
+            return state
+        else:
+            worker_pos, boxes = state
+            result = check_action(worker_pos, boxes, self.warehouse.walls, action)
+            if result == 'Failure':
+                return state
+            else:
+                return result
 
 
 movements = {
@@ -298,6 +309,32 @@ movements = {
     'Left': (-1, 0),
     'Right': (1, 0)
 }
+
+def check_action(worker_pos: (int, int), boxes: [(int, int)], walls: [(int, int)], action: str):
+    boxes: [(int, int)] = boxes[:]
+    dx, dy = movements[action]
+    worker_pos_new: (int, int) = (worker_pos[0] + dx, worker_pos[1] + dy)
+
+    # worker walk into a wall
+    if worker_pos_new in walls:
+        return 'Failure'
+
+    if worker_pos_new in boxes:
+        behind_pos: (int, int) = (worker_pos_new[0] + dx, worker_pos_new[1] + dy)
+
+        # worker push one box into a wall
+        if behind_pos in walls:
+            return 'Failure'
+
+        # worker push two boxes at the same time
+        if behind_pos in boxes:
+            return 'Failure'
+
+        boxes.remove(worker_pos_new)
+        boxes.append(behind_pos)
+
+    return worker_pos_new, boxes
+
 
 def check_action_seq(warehouse, action_seq):
     '''
@@ -327,28 +364,11 @@ def check_action_seq(warehouse, action_seq):
     walls: [(int, int)] = warehouse.walls[:]
 
     for action in action_seq:
-        dx, dy = movements[action]
-        worker_pos_new: (int, int) = (worker_pos[0] + dx, worker_pos[1] + dy)
-
-        # worker walk into a wall
-        if worker_pos_new in walls:
+        result = check_action(worker_pos, boxes, walls, action)
+        if result == 'Failure':
             return 'Failure'
-
-        if worker_pos_new in boxes:
-            behind_pos: (int, int) = (worker_pos_new[0] + dx, worker_pos_new[1] + dy)
-
-            # worker push one box into a wall
-            if behind_pos in walls:
-                return 'Failure'
-
-            # worker push two boxes at the same time
-            if behind_pos in boxes:
-                return 'Failure'
-
-            boxes.remove(worker_pos_new)
-            boxes.append(behind_pos)
-
-        worker_pos = worker_pos_new
+        else:
+            worker_pos, boxes = result
 
     warehouse_new: sokoban.Warehouse = warehouse.copy(worker_pos, boxes)
     return warehouse_new.__str__()
