@@ -22,31 +22,8 @@ def my_team():
     return [(9319638, 'Zhiyun', 'Pan'), (11679719, 'Weng Chong', 'Lao')]
  
 
-def taboo_cells(warehouse):
-    '''  
-    Identify the taboo cells of a warehouse. A cell inside a warehouse is 
-    called 'taboo' if whenever a box get pushed on such a cell then the puzzle 
-    becomes unsolvable.  
-    When determining the taboo cells, you must ignore all the existing boxes, 
-    simply consider the walls and the target cells.  
-    Use only the following two rules to determine the taboo cells;
-     Rule 1: if a cell is a corner inside the warehouse and not a target, 
-             then it is a taboo cell.
-     Rule 2: all the cells between two corners inside the warehouse along a 
-             wall are taboo if none of these cells is a target.
-    
-    @param warehouse: a Warehouse object
-
-    @return
-       A string representing the puzzle with only the wall cells marked with 
-       an '#' and the taboo cells marked with an 'X'.  
-       The returned string should NOT have marks for the worker, the targets,
-       and the boxes.  
-    '''
-    walls: [(int, int)] = warehouse.walls
-    targets: [(int, int)] = warehouse.targets
+def getTabooCellsList(walls: [(int, int)], targets: [(int, int)]) -> [(int, int)]:
     taboo_cell_set: set[(int, int)] = set()
-
     num_of_row, num_of_col = (max(y for _, y in walls) + 1), (max(x for x, _ in walls) + 1)
 
     # Extract all possible dead-end corners
@@ -133,8 +110,37 @@ def taboo_cells(warehouse):
                                 if checkContinueWalls(empty_space_list, (-1, 0)) or checkContinueWalls(empty_space_list, (1, 0)):
                                     for empty_space in empty_space_list:
                                         taboo_cell_set.add(empty_space.getPos())
+    return list(taboo_cell_set)
 
-    return getTabooMapString(num_of_row, num_of_col, walls, list(taboo_cell_set))
+
+def taboo_cells(warehouse):
+    '''  
+    Identify the taboo cells of a warehouse. A cell inside a warehouse is 
+    called 'taboo' if whenever a box get pushed on such a cell then the puzzle 
+    becomes unsolvable.  
+    When determining the taboo cells, you must ignore all the existing boxes, 
+    simply consider the walls and the target cells.  
+    Use only the following two rules to determine the taboo cells;
+     Rule 1: if a cell is a corner inside the warehouse and not a target, 
+             then it is a taboo cell.
+     Rule 2: all the cells between two corners inside the warehouse along a 
+             wall are taboo if none of these cells is a target.
+    
+    @param warehouse: a Warehouse object
+
+    @return
+       A string representing the puzzle with only the wall cells marked with 
+       an '#' and the taboo cells marked with an 'X'.  
+       The returned string should NOT have marks for the worker, the targets,
+       and the boxes.  
+    '''
+    walls: [(int, int)] = warehouse.walls
+    targets: [(int, int)] = warehouse.targets
+
+    num_of_row, num_of_col = (max(y for _, y in walls) + 1), (max(x for x, _ in walls) + 1)
+    taboo_cell: [(int, int)] = getTabooCellsList(walls, targets)
+
+    return getTabooMapString(num_of_row, num_of_col, walls, taboo_cell)
 
 
 WALL = '#'
