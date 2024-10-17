@@ -3,6 +3,9 @@ from mySokobanSolver import *
 
 import glob
 import time
+import multiprocessing as mp
+import multiprocessing.queues as mpq
+from typing import Tuple, Callable, Dict
 
 
 def test_taboo_cells():
@@ -143,7 +146,6 @@ def test_warehouse(problem_file, macro=False, limit_of_boxes=3):
     This function will test the performance of your warehouse for either macro or elem solutions and return the result.
     You can check if this solution works with your gui, or by cleverly using the check_action_seq function.
     '''
-
     wh = sokoban.Warehouse()
     wh.load_warehouse(problem_file)
 
@@ -161,18 +163,58 @@ def test_warehouse(problem_file, macro=False, limit_of_boxes=3):
     return student_answer
 
 
-def testAll(number=-1, limit_of_boxes=3):
+def warehouse_timeout(args: Tuple[object], q: mp.Queue):
+    # Do not alter this code.
+    q.put(test_warehouse(*args))
+
+
+def test_with_timeout(problem_file, macro=False, timeout=180, limit_of_boxes=3):
+    """
+    This function tests on a warehouse with the ability to timeout after a specified number of seconds.
+
+    Parameters:
+    problem_file (str): directory of a warehouse
+    macro (bool): indicates whether to use the macro solver. If false, will use the elem solver
+    timeout (int): The number of seconds the solver can run without timing out.
+    limit_of_boxes (int): The maximum number of boxes allowed.
+
+    Returns:
+    The solver solution or the string "Timed out" or "Skip"
+    """
+    q_worker = mp.Queue()
+    proc = mp.Process(target=warehouse_timeout, args=((problem_file, macro, limit_of_boxes), q_worker))
+    proc.start()
+    try:
+        res = q_worker.get(timeout=timeout)
+    except mpq.Empty:
+        proc.terminate()
+        res = "Timed out"
+    finally:
+        proc.join()
+    return res
+
+
+def testAll(number=-1, timeout=180, limit_of_boxes=3):
     file_name = "*" if number == -1 else f"warehouse_{number:04}"
     all_warehouses = sorted(glob.glob('warehouses/' + file_name + '.txt'))
 
+    num_of_correct: int = 0
     for problem_file in all_warehouses:
         print(f'Testing {problem_file}')
         s = time.time()
-        a = test_warehouse(problem_file, limit_of_boxes=limit_of_boxes)
-        if a != "Skip":
+        a = test_with_timeout(problem_file, timeout=timeout, limit_of_boxes=limit_of_boxes)
+        if a == "Skip":
+            print("Warehouse skipped due to too many boxes.")
+        elif a == "Timed out":
+            print(f"Solver timed out: {timeout}s")
+        else:
             print(f'Answer: {a}')
             print(f'Time taken: {time.time() - s :.3f} seconds')
+            num_of_correct += 1
         print("")
+
+    print("Accuracy is", num_of_correct*100 / len(all_warehouses), "%")
+    print("=======================================================")
 
 
 
@@ -184,4 +226,4 @@ if __name__ == '__main__':
     # test_can_go_there()
     # test_solve_sokoban_macro()
 
-    # testAll()
+    testAll()
