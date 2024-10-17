@@ -323,7 +323,7 @@ class SokobanPuzzle(search.Problem):
         # Build cost matrix
         cost_matrix: [[int]] = [[manhattan_distance(box, target) for target in targets] for box in boxes]
 
-        if num_boxes <= 5:
+        if num_boxes <= 6:
             min_total_cost = float('inf')
             for permutation in itertools.permutations(range(num_boxes)):
                 total_cost = sum(cost_matrix[i][permutation[i]] for i in range(num_boxes))
