@@ -277,21 +277,21 @@ class SokobanPuzzle(search.Problem):
         what type of list of actions is to be returned.
         """
         worker_pos, boxes = state
-        current_warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
 
-        taboo_map = None
+        taboo_cells_list = None
         if not self.allow_taboo_push:
-            taboo_map = taboo_cells(current_warehouse)
+            taboo_cells_list = getTabooCellsList(self.warehouse.walls, self.warehouse.targets)
 
         available_actions: [str] = []
         for action in movements.keys():
-            predicted_map: str = check_action_seq(current_warehouse, [action])
-            if predicted_map != 'Failure':
+            result = check_action(worker_pos, boxes, self.warehouse.walls, action)
+            if result != 'Failure':
                 available_actions.append(action)
 
-                if taboo_map is not None:
-                    for cell_predicted, cell_taboo in zip(predicted_map, taboo_map):
-                        if cell_predicted == BOX and cell_taboo == TABOO_CELL:
+                if taboo_cells_list is not None:
+                    _, boxes_new = result
+                    for box in boxes_new:
+                        if box in taboo_cells_list:
                             available_actions.remove(action)
                             break
         return available_actions
