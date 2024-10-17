@@ -232,4 +232,4 @@ if __name__ == '__main__':
     # test_can_go_there()
     # test_solve_sokoban_macro()
 
-    testAll()
+    # testAll()
