@@ -511,7 +511,7 @@ class WorkerPathProblem(search.Problem):
         cmap = ListedColormap(['black', '#8B4513', '#A9A9A9', 'white'])
 
         # Plot the maze using matplotlib
-        plt.figure(figsize=(2, 2))
+        plt.figure(figsize=(5, 5))
         plt.imshow(warehouse_array, cmap=cmap)
         plt.axis('off')  # Hide the axis
         plt.title("Warehouse Visualization")

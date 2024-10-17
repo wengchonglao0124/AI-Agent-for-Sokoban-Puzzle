@@ -139,7 +139,7 @@ def test_can_go_there_custom(number: int, dst: (int, int), expected_answer: bool
         if answer == expected_answer:
             print(fcn.__name__, ' passed!  :-)\n')
         else:
-            print(fcn.__name__, ' failed!  :-(\n')
+            print(fcn.__name__, ' failed!  :-(')
             print('Expected ');
             print(expected_answer)
             print('But, received ');
@@ -254,7 +254,8 @@ if __name__ == '__main__':
     test_check_elem_action_seq()
     test_solve_sokoban_elem()
     test_can_go_there()
-    test_can_go_there_custom(57, (7, 6), True)
+    test_can_go_there_custom(191, (12, 1), True)
+    test_can_go_there_custom(191, (1, 17), True)
     # test_solve_sokoban_macro()
 
     # testAll()
