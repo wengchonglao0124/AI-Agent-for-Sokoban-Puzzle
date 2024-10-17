@@ -434,6 +434,37 @@ def solve_sokoban_elem(warehouse):
         return "Impossible"
 
 
+class WorkerPathProblem(search.Problem):
+    def __init__(self, warehouse, goal):
+        super().__init__(warehouse.worker, goal)
+        walls: set[(int, int)] = set(warehouse.walls)
+        boxes: set[(int, int)] = set(warehouse.boxes)
+
+        self.obstacles: [(int, int)] = list(walls.union(boxes))
+
+    def actions(self, state):
+        worker_x, worker_y = state
+        available_actions: [str] = []
+        for action, (dx, dy) in movements.items():
+            worker_new: (int, int) = (worker_x + dx, worker_y + dy)
+            if worker_new not in self.obstacles:
+                available_actions.append(action)
+        return available_actions
+
+    def result(self, state, action):
+        available_actions: [str] = self.actions(state)
+        if action not in available_actions:
+            return state
+        else:
+            worker_x, worker_y = state
+            dx, dy = movements[action]
+            return worker_x + dx, worker_y + dy
+
+    def h(self, state):
+        worker_pos = state.state
+        return manhattan_distance(worker_pos, self.goal)
+
+
 def can_go_there(warehouse, dst):
     '''    
     Determine whether the worker can walk to the cell dst=(row,column) 
@@ -445,10 +476,13 @@ def can_go_there(warehouse, dst):
       True if the worker can walk to cell dst=(row,column) without pushing any box
       False otherwise
     '''
-    
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    solver = WorkerPathProblem(warehouse, (dst[1], dst[0]))
+    solution = search.astar_graph_search(solver)
+    if solution:
+        return True
+    else:
+        return False
+
 
 def solve_sokoban_macro(warehouse):
     '''    
