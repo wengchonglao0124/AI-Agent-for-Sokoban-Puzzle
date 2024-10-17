@@ -314,8 +314,8 @@ class SokobanPuzzle(search.Problem):
         targets: [(int, int)] = self.warehouse.targets
         return set(boxes) == set(targets)
 
-    def h(self, state):
-        worker_pos, boxes = state.state
+    def h(self, node):
+        worker_pos, boxes = node.state
         targets: [(int, int)] = self.warehouse.targets
         boxes: [(int, int)] = list(boxes)
         num_boxes: int = len(boxes)
@@ -460,8 +460,8 @@ class WorkerPathProblem(search.Problem):
             dx, dy = movements[action]
             return worker_x + dx, worker_y + dy
 
-    def h(self, state):
-        worker_pos = state.state
+    def h(self, node):
+        worker_pos = node.state
         return manhattan_distance(worker_pos, self.goal)
 
 
