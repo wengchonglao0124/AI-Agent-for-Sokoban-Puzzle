@@ -259,7 +259,6 @@ class SokobanPuzzle(search.Problem):
     
     
     '''
-    
     def __init__(self, warehouse, allow_taboo_push=False, macro=False):
         self.warehouse: sokoban.Warehouse = warehouse
         self.allow_taboo_push: bool = allow_taboo_push
@@ -307,6 +306,11 @@ class SokobanPuzzle(search.Problem):
                 return state
             else:
                 return result
+
+    def goal_test(self, state) -> bool:
+        worker_pos, boxes = state
+        targets: [(int, int)] = self.warehouse.targets
+        return set(boxes) == set(targets)
 
 
 movements = {
