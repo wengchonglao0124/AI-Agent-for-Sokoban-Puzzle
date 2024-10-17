@@ -147,7 +147,11 @@ def test_warehouse(problem_file, macro=False, limit_of_boxes=3):
     You can check if this solution works with your gui, or by cleverly using the check_action_seq function.
     '''
     wh = sokoban.Warehouse()
-    wh.load_warehouse(problem_file)
+    try:
+        wh.load_warehouse(problem_file)
+    except Exception as e:
+        print("An error occurred when loading the warehouse.")
+        return "Error"
 
     num_of_boxes = len(wh.boxes)
     print(f'Number of boxes: {num_of_boxes}')
@@ -194,7 +198,7 @@ def test_with_timeout(problem_file, macro=False, timeout=180, limit_of_boxes=3):
     return res
 
 
-def testAll(number=-1, timeout=180, limit_of_boxes=3):
+def testAll(number=-1, timeout=180, limit_of_boxes=5):
     file_name = "*" if number == -1 else f"warehouse_{number:04}"
     all_warehouses = sorted(glob.glob('warehouses/' + file_name + '.txt'))
 
@@ -207,6 +211,8 @@ def testAll(number=-1, timeout=180, limit_of_boxes=3):
             print("Warehouse skipped due to too many boxes.")
         elif a == "Timed out":
             print(f"Solver timed out: {timeout}s")
+        elif a == "Error":
+            print("Skip ->")
         else:
             print(f'Answer: {a}')
             print(f'Time taken: {time.time() - s :.3f} seconds')
