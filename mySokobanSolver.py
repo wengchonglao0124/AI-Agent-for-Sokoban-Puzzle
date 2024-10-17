@@ -505,7 +505,7 @@ class WorkerPathProblem(search.Problem):
                 elif char == BOX:
                     warehouse_array[y, x] = 0.4 # Box
                 elif char == 'o':
-                    warehouse_array[y, x] = 0.7
+                    warehouse_array[y, x] = 0.7 # Path
 
         # Define a custom colormap
         cmap = ListedColormap(['black', '#8B4513', '#A9A9A9', 'white'])
