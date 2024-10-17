@@ -11,6 +11,7 @@ interface and triggers to a fail for the test of your code.
 import math
 import search
 import sokoban
+import itertools
 
 def my_team():
     '''
@@ -313,6 +314,29 @@ class SokobanPuzzle(search.Problem):
         targets: [(int, int)] = self.warehouse.targets
         return set(boxes) == set(targets)
 
+    def h(self, state):
+        worker_pos, boxes = state.state
+        targets: [(int, int)] = self.warehouse.targets
+        boxes: [(int, int)] = list(boxes)
+        num_boxes: int = len(boxes)
+
+        # Build cost matrix
+        cost_matrix: [[int]] = [[manhattan_distance(box, target) for target in targets] for box in boxes]
+
+        if num_boxes <= 5:
+            min_total_cost = float('inf')
+            for permutation in itertools.permutations(range(num_boxes)):
+                total_cost = sum(cost_matrix[i][permutation[i]] for i in range(num_boxes))
+                if total_cost < min_total_cost:
+                    min_total_cost = total_cost
+            return min_total_cost
+        else:
+            total_distance = 0
+            for box in boxes:
+                min_distance = min(manhattan_distance(box, target) for target in targets)
+                total_distance += min_distance
+            return total_distance
+
 
 movements = {
     'Up': (0, -1),
@@ -320,6 +344,9 @@ movements = {
     'Left': (-1, 0),
     'Right': (1, 0)
 }
+
+def manhattan_distance(pos1, pos2):
+    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 def check_action(worker_pos: (int, int), boxes: [(int, int)], walls: [(int, int)], action: str):
     boxes: [(int, int)] = boxes[:]
@@ -400,7 +427,7 @@ def solve_sokoban_elem(warehouse):
             If the puzzle is already in a goal state, simply return []
     '''
     solver = SokobanPuzzle(warehouse)
-    solution = search.breadth_first_graph_search(solver)
+    solution = search.astar_graph_search(solver)
     if solution:
         return solution.solution()
     else:
