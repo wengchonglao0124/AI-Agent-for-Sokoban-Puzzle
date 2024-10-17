@@ -122,6 +122,30 @@ def test_can_go_there():
         print(answer)
 
 
+def test_can_go_there_custom(number: int, dst: (int, int), expected_answer: bool):
+    file_name = f"warehouse_{number:04}"
+    all_warehouses = sorted(glob.glob('warehouses/' + file_name + '.txt'))
+
+    for problem_file in all_warehouses:
+        fcn = test_can_go_there
+        print('<<  Test of {} >>'.format(fcn.__name__))
+        wh = sokoban.Warehouse()
+        try:
+            wh.load_warehouse(problem_file)
+        except Exception as e:
+            print("An error occurred when loading the warehouse.")
+
+        answer = can_go_there(wh, dst, True)
+        if answer == expected_answer:
+            print(fcn.__name__, ' passed!  :-)\n')
+        else:
+            print(fcn.__name__, ' failed!  :-(\n')
+            print('Expected ');
+            print(expected_answer)
+            print('But, received ');
+            print(answer)
+
+
 def test_solve_sokoban_macro():
     puzzle_t2 = '#######\n#@ $ .#\n#######'
     wh = Warehouse()
@@ -230,6 +254,7 @@ if __name__ == '__main__':
     test_check_elem_action_seq()
     test_solve_sokoban_elem()
     test_can_go_there()
+    test_can_go_there_custom(57, (7, 6), True)
     # test_solve_sokoban_macro()
 
     # testAll()

@@ -440,6 +440,7 @@ class WorkerPathProblem(search.Problem):
         walls: set[(int, int)] = set(warehouse.walls)
         boxes: set[(int, int)] = set(warehouse.boxes)
 
+        self.warehouse: sokoban.Warehouse = warehouse
         self.obstacles: [(int, int)] = list(walls.union(boxes))
 
     def actions(self, state):
@@ -464,8 +465,60 @@ class WorkerPathProblem(search.Problem):
         worker_pos = node.state
         return manhattan_distance(worker_pos, self.goal)
 
+    def print_solution(self, goal_node):
+        path = goal_node.path()
+        # print the solution
+        print(f"Solution takes {len(path) - 1} steps from the initial state to the goal state")
+        print("Below is the sequence of moves")
+        moves = []
+        for node in path:
+            if node.action:
+                moves += [f"{node.action}, "]
+        print(moves)
+        self.print_warehouse_solution(path)
 
-def can_go_there(warehouse, dst):
+    def print_warehouse_solution(self, path):
+        s = self.warehouse.__str__()
+        warehouse_rows = [list(row) for row in s.split('\n')]
+        for node in path:
+            x, y = node.state
+            warehouse_rows[y][x] = 'o'
+        s_path = '\n'.join([''.join(row) for row in warehouse_rows])
+        self.visualise_warehouse(s_path)
+
+    def visualise_warehouse(self, warehouse):
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from matplotlib.colors import ListedColormap
+
+        # Convert the warehouse string into a list of lists
+        warehouse_rows = warehouse.split('\n')
+        height = len(warehouse_rows)
+        width = len(warehouse_rows[0])
+        # Create a 2D numpy array to store the warehouse representation
+        warehouse_array = np.ones((height, width))
+        # Fill the numpy array: 0 for walls, 0.4 for boxes, 0.7 for paths
+        for y, row in enumerate(warehouse_rows):
+            for x, char in enumerate(row):
+                if char == WALL:
+                    warehouse_array[y, x] = 0  # Wall
+                elif char == BOX:
+                    warehouse_array[y, x] = 0.4 # Box
+                elif char == 'o':
+                    warehouse_array[y, x] = 0.7
+
+        # Define a custom colormap
+        cmap = ListedColormap(['black', '#8B4513', '#A9A9A9', 'white'])
+
+        # Plot the maze using matplotlib
+        plt.figure(figsize=(2, 2))
+        plt.imshow(warehouse_array, cmap=cmap)
+        plt.axis('off')  # Hide the axis
+        plt.title("Warehouse Visualization")
+        plt.show()
+
+
+def can_go_there(warehouse, dst, visualise=False):
     '''    
     Determine whether the worker can walk to the cell dst=(row,column) 
     without pushing any box.
@@ -479,6 +532,8 @@ def can_go_there(warehouse, dst):
     solver = WorkerPathProblem(warehouse, (dst[1], dst[0]))
     solution = search.astar_graph_search(solver)
     if solution:
+        if visualise:
+            solver.print_solution(solution)
         return True
     else:
         return False
