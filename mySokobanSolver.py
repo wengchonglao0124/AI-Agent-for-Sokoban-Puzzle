@@ -264,7 +264,7 @@ class SokobanPuzzle(search.Problem):
         self.allow_taboo_push: bool = allow_taboo_push
         self.macro: bool = macro
 
-        initial: ((int, int), [(int, int)]) = warehouse.worker, warehouse.boxes
+        initial: ((int, int), ((int, int))) = tuple(warehouse.worker), tuple(warehouse.boxes)
         super().__init__(initial)
 
     def actions(self, state):
@@ -283,7 +283,7 @@ class SokobanPuzzle(search.Problem):
 
         available_actions: [str] = []
         for action in movements.keys():
-            result = check_action(worker_pos, boxes, self.warehouse.walls, action)
+            result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
             if result != 'Failure':
                 available_actions.append(action)
 
@@ -301,11 +301,12 @@ class SokobanPuzzle(search.Problem):
             return state
         else:
             worker_pos, boxes = state
-            result = check_action(worker_pos, boxes, self.warehouse.walls, action)
+            result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
             if result == 'Failure':
                 return state
             else:
-                return result
+                worker_pos_new, boxes_new = result
+                return tuple(worker_pos_new), tuple(boxes_new)
 
     def goal_test(self, state) -> bool:
         worker_pos, boxes = state
@@ -398,10 +399,12 @@ def solve_sokoban_elem(warehouse):
             For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
             If the puzzle is already in a goal state, simply return []
     '''
-    
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    solver = SokobanPuzzle(warehouse)
+    solution = search.breadth_first_graph_search(solver)
+    if solution:
+        return solution.solution()
+    else:
+        return "Impossible"
 
 
 def can_go_there(warehouse, dst):
