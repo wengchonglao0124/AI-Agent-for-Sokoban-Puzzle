@@ -256,6 +256,6 @@ if __name__ == '__main__':
     test_can_go_there()
     test_can_go_there_custom(191, (12, 1), True)
     test_can_go_there_custom(191, (1, 17), False)
-    # test_solve_sokoban_macro()
+    test_solve_sokoban_macro()
 
     # testAll()

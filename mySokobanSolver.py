@@ -278,36 +278,71 @@ class SokobanPuzzle(search.Problem):
         """
         worker_pos, boxes = state
 
-        taboo_cells_list = None
-        if not self.allow_taboo_push:
-            taboo_cells_list = getTabooCellsList(self.warehouse.walls, self.warehouse.targets)
+        if self.allow_taboo_push:
+            taboo_cells_set: set[(int, int)] = set()
+        else:
+            taboo_cells_set: set[(int, int)] = set(getTabooCellsList(self.warehouse.walls, self.warehouse.targets))
 
-        available_actions: [str] = []
-        for action in movements.keys():
-            result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
-            if result != 'Failure':
-                available_actions.append(action)
+        available_actions: [(int, int)] = []
 
-                if taboo_cells_list is not None:
+        if not self.macro:
+            # Elementary actions
+            for action in movements.keys():
+                result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
+                if result != 'Failure':
                     _, boxes_new = result
-                    for box in boxes_new:
-                        if box in taboo_cells_list:
-                            available_actions.remove(action)
-                            break
-        return available_actions
+                    if not taboo_cells_set.intersection(boxes_new):
+                        available_actions.append(action)
+            return available_actions
+        else:
+            # Macro actions
+            warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
+            walls: set[(int, int)] = set(self.warehouse.walls)
+            boxes: set[(int, int)] = set(boxes)
+            obstacles: set[(int, int)] = walls.union(boxes)
+
+            for box_pos in boxes:
+                for action, (dx, dy) in movements.items():
+                    if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, taboo_cells_set):
+                        box: (int, int) = (box_pos[1], box_pos[0]) # answer require box=(row, column)
+                        available_actions.append((box, action))
+                    else:
+                        continue
+            return available_actions
 
     def result(self, state, action):
-        available_actions: [str] = self.actions(state)
-        if action not in available_actions:
-            return state
-        else:
-            worker_pos, boxes = state
+        worker_pos, boxes = state
+
+        if not self.macro:
+            # Elementary actions
             result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
             if result == 'Failure':
                 return state
             else:
                 worker_pos_new, boxes_new = result
                 return tuple(worker_pos_new), tuple(boxes_new)
+        else:
+            # Macro actions
+            warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
+            boxes: set[(int, int)] = set(boxes)
+            walls: set[(int, int)] = set(self.warehouse.walls)
+            obstacles: set[(int, int)] = walls.union(boxes)
+
+            box, direction = action
+            box_pos: (int, int) = (box[1], box[0])  # answer require box=(row, column)
+            dx, dy = movements[direction]
+            if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, set()):
+                worker_pos_new: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
+
+                # Move the box
+                box_new_pos: (int, int) = (box_pos[0] + dx, box_pos[1] + dy)
+                boxes_new: set[(int, int)] = boxes.copy()
+                boxes_new.remove(box_pos)
+                boxes_new.add(box_new_pos)
+
+                return tuple(worker_pos_new), tuple(boxes_new)
+            else:
+                return state
 
     def goal_test(self, state) -> bool:
         worker_pos, boxes = state
@@ -410,6 +445,19 @@ def check_action_seq(warehouse, action_seq):
 
     warehouse_new: sokoban.Warehouse = warehouse.copy(worker_pos, boxes)
     return warehouse_new.__str__()
+
+
+def check_macro_action(warehouse: sokoban.Warehouse, box: (int, int), move_direction: (int, int), obstacles: set[(int, int)], taboo_cells_set: set[(int, int)]) -> bool:
+    dx, dy = move_direction
+    box_push_pos: (int, int) = (box[0] - dx, box[1] - dy)
+    if not can_go_there(warehouse, (box_push_pos[1], box_push_pos[0])): # require dst=(row,column)
+        return False
+    box_new_pos: (int, int) = (box[0] + dx, box[1] + dy)
+    if box_new_pos in obstacles:
+        return False
+    if box_new_pos in taboo_cells_set:
+        return False
+    return True
 
 
 def solve_sokoban_elem(warehouse):
@@ -557,8 +605,11 @@ def solve_sokoban_macro(warehouse):
         Otherwise return M a sequence of macro actions that solves the puzzle.
         If the puzzle is already in a goal state, simply return []
     '''
-    
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    solver = SokobanPuzzle(warehouse, macro=True)
+    solution = search.astar_graph_search(solver)
+
+    if solution:
+        return solution.solution()
+    else:
+        return "Impossible"
 
