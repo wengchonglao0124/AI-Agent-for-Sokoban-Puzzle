@@ -128,7 +128,7 @@ def test_can_go_there_custom(number: int, dst: (int, int), expected_answer: bool
 
     for problem_file in all_warehouses:
         fcn = test_can_go_there
-        print('<<  Test of {} >>'.format(fcn.__name__))
+        print('<<  Custom Test of {} >>'.format(fcn.__name__))
         wh = sokoban.Warehouse()
         try:
             wh.load_warehouse(problem_file)
