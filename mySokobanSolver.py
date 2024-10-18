@@ -366,6 +366,26 @@ class SokobanPuzzle(search.Problem):
                 total_distance += min_distance
             return total_distance
 
+    def path_cost(self, c, state1, action, state2):
+        if not self.macro:
+            # For elementary actions, each action costs 1
+            return c + 1
+        else:
+            # For macro actions, calculate the cost of moving the worker to the box
+            # plus the cost to push the box: 1
+            worker_pos, _ = state1
+
+            box, direction = action
+            box_pos: (int, int) = (box[1], box[0])  # answer require box=(row, column)
+            dx, dy = movements[direction]
+            box_push_pos: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
+
+            # Calculate the minimal path cost from worker_pos to box_push_pos
+            path_cost_to_box: int = manhattan_distance(worker_pos, box_push_pos)
+            # Total cost is cumulative cost
+            print(path_cost_to_box)
+            return c + path_cost_to_box + 1
+
 
 movements = {
     'Up': (0, -1),
@@ -374,7 +394,7 @@ movements = {
     'Right': (1, 0)
 }
 
-def manhattan_distance(pos1, pos2):
+def manhattan_distance(pos1, pos2) -> int:
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 def check_action(worker_pos: (int, int), boxes: [(int, int)], walls: [(int, int)], action: str):
