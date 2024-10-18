@@ -283,10 +283,9 @@ class SokobanPuzzle(search.Problem):
         else:
             taboo_cells_set: set[(int, int)] = set(getTabooCellsList(self.warehouse.walls, self.warehouse.targets))
 
-        available_actions: [(int, int)] = []
-
         if not self.macro:
             # Elementary actions
+            available_actions: [str] = []
             for action in movements.keys():
                 result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
                 if result != 'Failure':
@@ -301,6 +300,7 @@ class SokobanPuzzle(search.Problem):
             boxes: set[(int, int)] = set(boxes)
             obstacles: set[(int, int)] = walls.union(boxes)
 
+            available_actions: [((int, int), str)] = []
             for box_pos in boxes:
                 for action, (dx, dy) in movements.items():
                     if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, taboo_cells_set):
@@ -323,26 +323,20 @@ class SokobanPuzzle(search.Problem):
                 return tuple(worker_pos_new), tuple(boxes_new)
         else:
             # Macro actions
-            warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
             boxes: set[(int, int)] = set(boxes)
-            walls: set[(int, int)] = set(self.warehouse.walls)
-            obstacles: set[(int, int)] = walls.union(boxes)
 
             box, direction = action
             box_pos: (int, int) = (box[1], box[0])  # answer require box=(row, column)
             dx, dy = movements[direction]
-            if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, set()):
-                worker_pos_new: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
 
-                # Move the box
-                box_new_pos: (int, int) = (box_pos[0] + dx, box_pos[1] + dy)
-                boxes_new: set[(int, int)] = boxes.copy()
-                boxes_new.remove(box_pos)
-                boxes_new.add(box_new_pos)
+            worker_pos_new: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
+            box_new_pos: (int, int) = (box_pos[0] + dx, box_pos[1] + dy)
 
-                return tuple(worker_pos_new), tuple(boxes_new)
-            else:
-                return state
+            boxes_new: set[(int, int)] = boxes.copy()
+            boxes_new.remove(box_pos)
+            boxes_new.add(box_new_pos)
+
+            return tuple(worker_pos_new), tuple(boxes_new)
 
     def goal_test(self, state) -> bool:
         worker_pos, boxes = state
