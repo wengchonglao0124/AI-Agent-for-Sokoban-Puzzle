@@ -383,7 +383,6 @@ class SokobanPuzzle(search.Problem):
             # Calculate the minimal path cost from worker_pos to box_push_pos
             path_cost_to_box: int = manhattan_distance(worker_pos, box_push_pos)
             # Total cost is cumulative cost
-            print(path_cost_to_box)
             return c + path_cost_to_box + 1
 
 

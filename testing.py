@@ -222,7 +222,7 @@ def test_with_timeout(problem_file, macro=False, timeout=180, limit_of_boxes=3):
     return res
 
 
-def testAll(number=-1, timeout=180, limit_of_boxes=5):
+def testAll(number=-1, macro=False, timeout=180, limit_of_boxes=6):
     file_name = "*" if number == -1 else f"warehouse_{number:04}"
     all_warehouses = sorted(glob.glob('warehouses/' + file_name + '.txt'))
 
@@ -230,7 +230,7 @@ def testAll(number=-1, timeout=180, limit_of_boxes=5):
     for problem_file in all_warehouses:
         print(f'Testing {problem_file}')
         s = time.time()
-        a = test_with_timeout(problem_file, timeout=timeout, limit_of_boxes=limit_of_boxes)
+        a = test_with_timeout(problem_file, macro=macro, timeout=timeout, limit_of_boxes=limit_of_boxes)
         if a == "Skip":
             print("Warehouse skipped due to too many boxes.")
         elif a == "Timed out":
@@ -259,3 +259,4 @@ if __name__ == '__main__':
     test_solve_sokoban_macro()
 
     # testAll()
+    # testAll(macro=True)
