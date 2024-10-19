@@ -405,12 +405,12 @@ def manhattan_distance(pos1, pos2) -> int:
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 def compute_min_distance(start: (int, int), goal: (int, int), walls: [(int, int)], boxes: [(int, int)]) -> int:
-    obstacles = set(walls).union(set(boxes))
+    obstacles: set[(int, int)] = set(walls).union(set(boxes))
     obstacles.discard(goal)  # Allow worker to move to the box's push position
 
     frontier = deque()
     frontier.append((start, 0))
-    explored = set()
+    explored: set[(int, int)] = set()
     explored.add(start)
 
     while frontier:
@@ -418,7 +418,7 @@ def compute_min_distance(start: (int, int), goal: (int, int), walls: [(int, int)
         if current_pos == goal:
             return path_length
         for dx, dy in movements.values():
-            next_pos = (current_pos[0] + dx, current_pos[1] + dy)
+            next_pos: (int, int) = (current_pos[0] + dx, current_pos[1] + dy)
             if next_pos in obstacles or next_pos in explored:
                 continue
             frontier.append((next_pos, path_length + 1))
