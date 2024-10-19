@@ -296,19 +296,24 @@ class SokobanPuzzle(search.Problem):
             return available_actions
         else:
             # Macro actions
-            warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
             walls: set[(int, int)] = set(self.warehouse.walls)
             boxes: set[(int, int)] = set(boxes)
             obstacles: set[(int, int)] = walls.union(boxes)
 
             available_actions: [((int, int), str)] = []
+            reachable_positions: set[(int, int)] = get_reachable_positions(worker_pos, obstacles)
+
             for box_pos in boxes:
                 for action, (dx, dy) in movements.items():
-                    if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, self.taboo_cells_set):
-                        box: (int, int) = (box_pos[1], box_pos[0]) # answer require box=(row, column)
-                        available_actions.append((box, action))
-                    else:
+                    box_push_pos: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
+                    box_new_pos: (int, int) = (box_pos[0] + dx, box_pos[1] + dy)
+                    if box_new_pos in obstacles:
                         continue
+                    if box_new_pos in self.taboo_cells_set:
+                        continue
+                    if box_push_pos in reachable_positions:
+                        box: (int, int) = (box_pos[1], box_pos[0])  # answer require box=(row, column)
+                        available_actions.append((box, action))
             return available_actions
 
     def result(self, state, action):
@@ -348,24 +353,37 @@ class SokobanPuzzle(search.Problem):
         worker_pos, boxes = node.state
         targets: [(int, int)] = self.warehouse.targets
         boxes: [(int, int)] = list(boxes)
-        num_boxes: int = len(boxes)
+        total_distance: int = 0
 
-        # Build cost matrix
-        cost_matrix: [[int]] = [[manhattan_distance(box, target) for target in targets] for box in boxes]
+        # Greedy assignment of boxes to targets
+        boxes_remaining: [(int, int)] = boxes.copy()
+        targets_remaining: [(int, int)] = targets.copy()
 
-        if num_boxes <= 6:
-            min_total_cost = float('inf')
-            for permutation in itertools.permutations(range(num_boxes)):
-                total_cost = sum(cost_matrix[i][permutation[i]] for i in range(num_boxes))
-                if total_cost < min_total_cost:
-                    min_total_cost = total_cost
-            return min_total_cost
-        else:
-            total_distance = 0
-            for box in boxes:
-                min_distance = min(manhattan_distance(box, target) for target in targets)
-                total_distance += min_distance
-            return total_distance
+        while boxes_remaining and targets_remaining:
+            min_distance = float('inf')
+            min_box = None
+            min_target = None
+            for box in boxes_remaining:
+                for target in targets_remaining:
+                    distance: int = manhattan_distance(box, target)
+                    if distance < min_distance:
+                        min_distance = distance
+                        min_box = box
+                        min_target = target
+            total_distance += min_distance
+            boxes_remaining.remove(min_box)
+            targets_remaining.remove(min_target)
+
+        # Add remaining boxes (if any)
+        for box in boxes_remaining:
+            min_distance: int = min(manhattan_distance(box, target) for target in targets)
+            total_distance += min_distance
+
+        # Include the distance from the worker to the closest box
+        min_worker_box_distance: int = min(manhattan_distance(worker_pos, box) for box in boxes)
+        total_distance += min_worker_box_distance
+
+        return total_distance
 
     def path_cost(self, c, state1, action, state2):
         if not self.macro:
@@ -374,15 +392,17 @@ class SokobanPuzzle(search.Problem):
         else:
             # For macro actions, calculate the cost of moving the worker to the box
             # plus the cost to push the box: 1
-            worker_pos, _ = state1
+            worker_pos, boxes = state1
 
             box, direction = action
             box_pos: (int, int) = (box[1], box[0])  # answer require box=(row, column)
             dx, dy = movements[direction]
             box_push_pos: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
 
-            # Calculate the minimal path cost from worker_pos to box_push_pos
-            path_cost_to_box: int = manhattan_distance(worker_pos, box_push_pos)
+            # Compute the actual minimal path cost
+            path_cost_to_box: int = compute_min_distance(worker_pos, box_push_pos, self.warehouse.walls, list(boxes))
+            if path_cost_to_box is None:
+                return float('inf')  # No path to box_push_pos
             # Total cost is cumulative cost
             return c + path_cost_to_box + 1
 
@@ -396,6 +416,45 @@ movements = {
 
 def manhattan_distance(pos1, pos2) -> int:
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+def compute_min_distance(start: (int, int), goal: (int, int), walls: [(int, int)], boxes: [(int, int)]) -> int:
+    obstacles: set[(int, int)] = set(walls).union(set(boxes))
+    obstacles.discard(goal)  # Allow worker to move to the box's push position
+
+    frontier = deque()
+    frontier.append((start, 0))
+    explored: set[(int, int)] = set()
+    explored.add(start)
+
+    while frontier:
+        current_pos, path_length = frontier.popleft()
+        if current_pos == goal:
+            return path_length
+        for dx, dy in movements.values():
+            next_pos: (int, int) = (current_pos[0] + dx, current_pos[1] + dy)
+            if next_pos in obstacles or next_pos in explored:
+                continue
+            frontier.append((next_pos, path_length + 1))
+            explored.add(next_pos)
+    return None  # Goal is unreachable
+
+def get_reachable_positions(start_pos: (int, int), obstacles: set[(int, int)]) -> set[(int, int)]:
+    frontier = deque()
+    frontier.append(start_pos)
+    explored: set[(int, int)] = set()
+    explored.add(start_pos)
+    reachable_positions: set[(int, int)] = set()
+
+    while frontier:
+        current: (int, int) = frontier.popleft()
+        reachable_positions.add(current)
+        for dx, dy in movements.values():
+            next_pos: (int, int) = (current[0] + dx, current[1] + dy)
+            if next_pos in obstacles or next_pos in explored:
+                continue
+            frontier.append(next_pos)
+            explored.add(next_pos)
+    return reachable_positions
 
 def check_action(worker_pos: (int, int), boxes: [(int, int)], walls: [(int, int)], action: str):
     boxes: [(int, int)] = boxes[:]
@@ -496,7 +555,86 @@ def solve_sokoban_elem(warehouse):
         return "Impossible"
 
 
-def can_go_there(warehouse, dst):
+class WorkerPathProblem(search.Problem):
+    def __init__(self, warehouse, goal):
+        super().__init__(warehouse.worker, goal)
+        walls: set[(int, int)] = set(warehouse.walls)
+        boxes: set[(int, int)] = set(warehouse.boxes)
+
+        self.warehouse: sokoban.Warehouse = warehouse
+        self.obstacles: [(int, int)] = list(walls.union(boxes))
+
+    def actions(self, state):
+        worker_x, worker_y = state
+        available_actions: [str] = []
+        for action, (dx, dy) in movements.items():
+            worker_new: (int, int) = (worker_x + dx, worker_y + dy)
+            if worker_new not in self.obstacles:
+                available_actions.append(action)
+        return available_actions
+
+    def result(self, state, action):
+        worker_x, worker_y = state
+        dx, dy = movements[action]
+        return worker_x + dx, worker_y + dy
+
+    def h(self, node):
+        worker_pos = node.state
+        return manhattan_distance(worker_pos, self.goal)
+
+    def print_solution(self, goal_node):
+        path = goal_node.path()
+        # print the solution
+        print(f"Solution takes {len(path) - 1} steps from the initial state to the goal state")
+        print("Below is the sequence of moves")
+        moves = []
+        for node in path:
+            if node.action:
+                moves += [f"{node.action}, "]
+        print(moves)
+        self.print_warehouse_solution(path)
+
+    def print_warehouse_solution(self, path):
+        s = self.warehouse.__str__()
+        warehouse_rows = [list(row) for row in s.split('\n')]
+        for node in path:
+            x, y = node.state
+            warehouse_rows[y][x] = 'o'
+        s_path = '\n'.join([''.join(row) for row in warehouse_rows])
+        self.visualise_warehouse(s_path)
+
+    def visualise_warehouse(self, warehouse):
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from matplotlib.colors import ListedColormap
+
+        # Convert the warehouse string into a list of lists
+        warehouse_rows = warehouse.split('\n')
+        height = len(warehouse_rows)
+        width = len(warehouse_rows[0])
+        # Create a 2D numpy array to store the warehouse representation
+        warehouse_array = np.ones((height, width))
+        # Fill the numpy array: 0 for walls, 0.4 for boxes, 0.7 for paths
+        for y, row in enumerate(warehouse_rows):
+            for x, char in enumerate(row):
+                if char == WALL:
+                    warehouse_array[y, x] = 0  # Wall
+                elif char == BOX:
+                    warehouse_array[y, x] = 0.4 # Box
+                elif char == 'o':
+                    warehouse_array[y, x] = 0.7 # Path
+
+        # Define a custom colormap
+        cmap = ListedColormap(['black', '#8B4513', '#A9A9A9', 'white'])
+
+        # Plot the maze using matplotlib
+        plt.figure(figsize=(5, 5))
+        plt.imshow(warehouse_array, cmap=cmap)
+        plt.axis('off')  # Hide the axis
+        plt.title("Warehouse Visualization")
+        plt.show()
+
+def can_go_there(warehouse, dst, visualise=False):
     '''    
     Determine whether the worker can walk to the cell dst=(row,column) 
     without pushing any box.
@@ -507,33 +645,14 @@ def can_go_there(warehouse, dst):
       True if the worker can walk to cell dst=(row,column) without pushing any box
       False otherwise
     '''
-    walls: set[(int, int)] = set(warehouse.walls)
-    boxes: set[(int, int)] = set(warehouse.boxes)
-    obstacles: set[(int, int)] = walls.union(boxes)
-
-    worker_pos: (int, int) = warehouse.worker
-    dst: (int, int) = (dst[1], dst[0])  # Convert (row, column) to (x, y)
-
-    if dst in obstacles:
+    solver = WorkerPathProblem(warehouse, (dst[1], dst[0]))
+    solution = search.breadth_first_graph_search(solver)
+    if solution:
+        if visualise:
+            solver.print_solution(solution)
+        return True
+    else:
         return False
-
-    # Implementing direct BFS
-    frontier = deque()
-    frontier.append(worker_pos)
-    explored = set()
-    explored.add(worker_pos)
-
-    while frontier:
-        current = frontier.popleft()
-        if current == dst:
-            return True
-        for dx, dy in movements.values():
-            next_cell = (current[0] + dx, current[1] + dy)
-            if next_cell in obstacles or next_cell in explored:
-                continue
-            frontier.append(next_cell)
-            explored.add(next_cell)
-    return False
 
 
 def solve_sokoban_macro(warehouse):
