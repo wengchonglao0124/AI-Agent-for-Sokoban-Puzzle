@@ -353,24 +353,37 @@ class SokobanPuzzle(search.Problem):
         worker_pos, boxes = node.state
         targets: [(int, int)] = self.warehouse.targets
         boxes: [(int, int)] = list(boxes)
-        num_boxes: int = len(boxes)
+        total_distance: int = 0
 
-        # Build cost matrix
-        cost_matrix: [[int]] = [[manhattan_distance(box, target) for target in targets] for box in boxes]
+        # Greedy assignment of boxes to targets
+        boxes_remaining: [(int, int)] = boxes.copy()
+        targets_remaining: [(int, int)] = targets.copy()
 
-        if num_boxes <= 6:
-            min_total_cost = float('inf')
-            for permutation in itertools.permutations(range(num_boxes)):
-                total_cost = sum(cost_matrix[i][permutation[i]] for i in range(num_boxes))
-                if total_cost < min_total_cost:
-                    min_total_cost = total_cost
-            return min_total_cost
-        else:
-            total_distance = 0
-            for box in boxes:
-                min_distance = min(manhattan_distance(box, target) for target in targets)
-                total_distance += min_distance
-            return total_distance
+        while boxes_remaining and targets_remaining:
+            min_distance = float('inf')
+            min_box = None
+            min_target = None
+            for box in boxes_remaining:
+                for target in targets_remaining:
+                    distance: int = manhattan_distance(box, target)
+                    if distance < min_distance:
+                        min_distance = distance
+                        min_box = box
+                        min_target = target
+            total_distance += min_distance
+            boxes_remaining.remove(min_box)
+            targets_remaining.remove(min_target)
+
+        # Add remaining boxes (if any)
+        for box in boxes_remaining:
+            min_distance: int = min(manhattan_distance(box, target) for target in targets)
+            total_distance += min_distance
+
+        # Include the distance from the worker to the closest box
+        min_worker_box_distance: int = min(manhattan_distance(worker_pos, box) for box in boxes)
+        total_distance += min_worker_box_distance
+
+        return total_distance
 
     def path_cost(self, c, state1, action, state2):
         if not self.macro:
