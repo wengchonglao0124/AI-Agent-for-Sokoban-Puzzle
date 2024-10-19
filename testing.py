@@ -258,5 +258,9 @@ if __name__ == '__main__':
     test_can_go_there_custom(191, (1, 17), False)
     test_solve_sokoban_macro()
 
+    testAll(5)
+    testAll(5, macro=True)
     # testAll()
     # testAll(macro=True)
+    # testAll(limit_of_boxes=100)
+    # testAll(macro=True, limit_of_boxes=100)

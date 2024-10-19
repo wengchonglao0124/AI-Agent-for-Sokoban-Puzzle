@@ -11,7 +11,6 @@ interface and triggers to a fail for the test of your code.
 import math
 import search
 import sokoban
-import itertools
 from collections import deque
 
 def my_team():
