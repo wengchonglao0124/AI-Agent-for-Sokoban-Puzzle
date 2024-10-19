@@ -301,7 +301,7 @@ class SokobanPuzzle(search.Problem):
             obstacles: set[(int, int)] = walls.union(boxes)
 
             available_actions: [((int, int), str)] = []
-            reachable_positions: set[(int, int)] = self.get_reachable_positions(worker_pos, obstacles)
+            reachable_positions: set[(int, int)] = get_reachable_positions(worker_pos, obstacles)
 
             for box_pos in boxes:
                 for action, (dx, dy) in movements.items():
@@ -315,24 +315,6 @@ class SokobanPuzzle(search.Problem):
                         box: (int, int) = (box_pos[1], box_pos[0])  # answer require box=(row, column)
                         available_actions.append((box, action))
             return available_actions
-
-    def get_reachable_positions(self, start_pos, obstacles):
-        frontier = deque()
-        frontier.append(start_pos)
-        explored = set()
-        explored.add(start_pos)
-        reachable_positions = set()
-
-        while frontier:
-            current = frontier.popleft()
-            reachable_positions.add(current)
-            for dx, dy in movements.values():
-                next_pos = (current[0] + dx, current[1] + dy)
-                if next_pos in obstacles or next_pos in explored:
-                    continue
-                frontier.append(next_pos)
-                explored.add(next_pos)
-        return reachable_positions
 
     def result(self, state, action):
         worker_pos, boxes = state
@@ -442,6 +424,24 @@ def compute_min_distance(start: (int, int), goal: (int, int), walls: [(int, int)
             frontier.append((next_pos, path_length + 1))
             explored.add(next_pos)
     return None  # Goal is unreachable
+
+def get_reachable_positions(start_pos: (int, int), obstacles: set[(int, int)]) -> set[(int, int)]:
+    frontier = deque()
+    frontier.append(start_pos)
+    explored: set[(int, int)] = set()
+    explored.add(start_pos)
+    reachable_positions: set[(int, int)] = set()
+
+    while frontier:
+        current: (int, int) = frontier.popleft()
+        reachable_positions.add(current)
+        for dx, dy in movements.values():
+            next_pos: (int, int) = (current[0] + dx, current[1] + dy)
+            if next_pos in obstacles or next_pos in explored:
+                continue
+            frontier.append(next_pos)
+            explored.add(next_pos)
+    return reachable_positions
 
 def check_action(worker_pos: (int, int), boxes: [(int, int)], walls: [(int, int)], action: str):
     boxes: [(int, int)] = boxes[:]
