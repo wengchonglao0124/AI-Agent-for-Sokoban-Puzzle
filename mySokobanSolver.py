@@ -265,6 +265,11 @@ class SokobanPuzzle(search.Problem):
         self.allow_taboo_push: bool = allow_taboo_push
         self.macro: bool = macro
 
+        if allow_taboo_push:
+            self.taboo_cells_set: set[(int, int)] = set()
+        else:
+            self.taboo_cells_set: set[(int, int)] = set(getTabooCellsList(warehouse.walls, warehouse.targets))
+
         initial: ((int, int), ((int, int))) = tuple(warehouse.worker), tuple(warehouse.boxes)
         super().__init__(initial)
 
@@ -278,11 +283,6 @@ class SokobanPuzzle(search.Problem):
         """
         worker_pos, boxes = state
 
-        if self.allow_taboo_push:
-            taboo_cells_set: set[(int, int)] = set()
-        else:
-            taboo_cells_set: set[(int, int)] = set(getTabooCellsList(self.warehouse.walls, self.warehouse.targets))
-
         if not self.macro:
             # Elementary actions
             available_actions: [str] = []
@@ -290,7 +290,7 @@ class SokobanPuzzle(search.Problem):
                 result = check_action(worker_pos, list(boxes), self.warehouse.walls, action)
                 if result != 'Failure':
                     _, boxes_new = result
-                    if not taboo_cells_set.intersection(boxes_new):
+                    if not self.taboo_cells_set.intersection(boxes_new):
                         available_actions.append(action)
             return available_actions
         else:
@@ -303,7 +303,7 @@ class SokobanPuzzle(search.Problem):
             available_actions: [((int, int), str)] = []
             for box_pos in boxes:
                 for action, (dx, dy) in movements.items():
-                    if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, taboo_cells_set):
+                    if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, self.taboo_cells_set):
                         box: (int, int) = (box_pos[1], box_pos[0]) # answer require box=(row, column)
                         available_actions.append((box, action))
                     else:
