@@ -296,20 +296,43 @@ class SokobanPuzzle(search.Problem):
             return available_actions
         else:
             # Macro actions
-            warehouse: sokoban.Warehouse = self.warehouse.copy(worker_pos, boxes)
             walls: set[(int, int)] = set(self.warehouse.walls)
             boxes: set[(int, int)] = set(boxes)
             obstacles: set[(int, int)] = walls.union(boxes)
 
             available_actions: [((int, int), str)] = []
+            reachable_positions: set[(int, int)] = self.get_reachable_positions(worker_pos, obstacles)
+
             for box_pos in boxes:
                 for action, (dx, dy) in movements.items():
-                    if check_macro_action(warehouse, box_pos, (dx, dy), obstacles, self.taboo_cells_set):
-                        box: (int, int) = (box_pos[1], box_pos[0]) # answer require box=(row, column)
-                        available_actions.append((box, action))
-                    else:
+                    box_push_pos: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
+                    box_new_pos: (int, int) = (box_pos[0] + dx, box_pos[1] + dy)
+                    if box_new_pos in obstacles:
                         continue
+                    if box_new_pos in self.taboo_cells_set:
+                        continue
+                    if box_push_pos in reachable_positions:
+                        box: (int, int) = (box_pos[1], box_pos[0])  # answer require box=(row, column)
+                        available_actions.append((box, action))
             return available_actions
+
+    def get_reachable_positions(self, start_pos, obstacles):
+        frontier = deque()
+        frontier.append(start_pos)
+        explored = set()
+        explored.add(start_pos)
+        reachable_positions = set()
+
+        while frontier:
+            current = frontier.popleft()
+            reachable_positions.add(current)
+            for dx, dy in movements.values():
+                next_pos = (current[0] + dx, current[1] + dy)
+                if next_pos in obstacles or next_pos in explored:
+                    continue
+                frontier.append(next_pos)
+                explored.add(next_pos)
+        return reachable_positions
 
     def result(self, state, action):
         worker_pos, boxes = state
