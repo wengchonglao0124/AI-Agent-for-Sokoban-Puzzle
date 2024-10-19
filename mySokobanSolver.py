@@ -12,6 +12,7 @@ import math
 import search
 import sokoban
 import itertools
+from collections import deque
 
 def my_team():
     '''
@@ -380,10 +381,33 @@ class SokobanPuzzle(search.Problem):
             dx, dy = movements[direction]
             box_push_pos: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
 
-            # Calculate the minimal path cost from worker_pos to box_push_pos
-            path_cost_to_box: int = manhattan_distance(worker_pos, box_push_pos)
+            # Compute the actual minimal path cost
+            path_cost_to_box: int = self.compute_min_distance(worker_pos, box_push_pos)
+            if path_cost_to_box is None:
+                return float('inf')  # No path to box_push_pos
             # Total cost is cumulative cost
             return c + path_cost_to_box + 1
+
+    def compute_min_distance(self, start, goal):
+        obstacles = set(self.warehouse.walls).union(set(self.warehouse.boxes))
+        obstacles.discard(goal)  # Allow worker to move to the box's push position
+
+        frontier = deque()
+        frontier.append((start, 0))
+        explored = set()
+        explored.add(start)
+
+        while frontier:
+            current_pos, path_length = frontier.popleft()
+            if current_pos == goal:
+                return path_length
+            for dx, dy in movements.values():
+                next_pos = (current_pos[0] + dx, current_pos[1] + dy)
+                if next_pos in obstacles or next_pos in explored:
+                    continue
+                frontier.append((next_pos, path_length + 1))
+                explored.add(next_pos)
+        return None  # Goal is unreachable
 
 
 movements = {
