@@ -514,13 +514,9 @@ class WorkerPathProblem(search.Problem):
         return available_actions
 
     def result(self, state, action):
-        available_actions: [str] = self.actions(state)
-        if action not in available_actions:
-            return state
-        else:
-            worker_x, worker_y = state
-            dx, dy = movements[action]
-            return worker_x + dx, worker_y + dy
+        worker_x, worker_y = state
+        dx, dy = movements[action]
+        return worker_x + dx, worker_y + dy
 
     def h(self, node):
         worker_pos = node.state
@@ -591,7 +587,7 @@ def can_go_there(warehouse, dst, visualise=False):
       False otherwise
     '''
     solver = WorkerPathProblem(warehouse, (dst[1], dst[0]))
-    solution = search.astar_graph_search(solver)
+    solution = search.breadth_first_graph_search(solver)
     if solution:
         if visualise:
             solver.print_solution(solution)
