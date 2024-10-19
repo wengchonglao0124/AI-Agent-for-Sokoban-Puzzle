@@ -397,7 +397,7 @@ class SokobanPuzzle(search.Problem):
         else:
             # For macro actions, calculate the cost of moving the worker to the box
             # plus the cost to push the box: 1
-            worker_pos, _ = state1
+            worker_pos, boxes = state1
 
             box, direction = action
             box_pos: (int, int) = (box[1], box[0])  # answer require box=(row, column)
@@ -405,32 +405,11 @@ class SokobanPuzzle(search.Problem):
             box_push_pos: (int, int) = (box_pos[0] - dx, box_pos[1] - dy)
 
             # Compute the actual minimal path cost
-            path_cost_to_box: int = self.compute_min_distance(worker_pos, box_push_pos)
+            path_cost_to_box: int = compute_min_distance(worker_pos, box_push_pos, self.warehouse.walls, list(boxes))
             if path_cost_to_box is None:
                 return float('inf')  # No path to box_push_pos
             # Total cost is cumulative cost
             return c + path_cost_to_box + 1
-
-    def compute_min_distance(self, start, goal):
-        obstacles = set(self.warehouse.walls).union(set(self.warehouse.boxes))
-        obstacles.discard(goal)  # Allow worker to move to the box's push position
-
-        frontier = deque()
-        frontier.append((start, 0))
-        explored = set()
-        explored.add(start)
-
-        while frontier:
-            current_pos, path_length = frontier.popleft()
-            if current_pos == goal:
-                return path_length
-            for dx, dy in movements.values():
-                next_pos = (current_pos[0] + dx, current_pos[1] + dy)
-                if next_pos in obstacles or next_pos in explored:
-                    continue
-                frontier.append((next_pos, path_length + 1))
-                explored.add(next_pos)
-        return None  # Goal is unreachable
 
 
 movements = {
@@ -442,6 +421,27 @@ movements = {
 
 def manhattan_distance(pos1, pos2) -> int:
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+def compute_min_distance(start: (int, int), goal: (int, int), walls: [(int, int)], boxes: [(int, int)]) -> int:
+    obstacles = set(walls).union(set(boxes))
+    obstacles.discard(goal)  # Allow worker to move to the box's push position
+
+    frontier = deque()
+    frontier.append((start, 0))
+    explored = set()
+    explored.add(start)
+
+    while frontier:
+        current_pos, path_length = frontier.popleft()
+        if current_pos == goal:
+            return path_length
+        for dx, dy in movements.values():
+            next_pos = (current_pos[0] + dx, current_pos[1] + dy)
+            if next_pos in obstacles or next_pos in explored:
+                continue
+            frontier.append((next_pos, path_length + 1))
+            explored.add(next_pos)
+    return None  # Goal is unreachable
 
 def check_action(worker_pos: (int, int), boxes: [(int, int)], walls: [(int, int)], action: str):
     boxes: [(int, int)] = boxes[:]
