@@ -26,29 +26,6 @@ The solver treats Sokoban as a state-space search problem and efficiently finds 
 
 ---
 
-## Repository Structure
-
-```plaintext
-📂 AI-Agent-for-Sokoban/
-├── 📁 src/                  # Core files
-│   ├── mySokobanSolver.py   # AI solver implementation
-│   ├── search.py            # Search algorithms (QUT-provided template)
-│   ├── sokoban.py           # Sokoban warehouse representation (QUT-provided template)
-├── 📁 data/                 # Sokoban puzzles
-│   ├── warehouse_01.txt
-│   ├── warehouse_02.txt
-│   ├── ... (other puzzles)
-├── 📁 notebooks/            # Demonstration and testing
-│   ├── sokobanTester.ipynb
-├── 📄 README.md             # Project documentation
-├── 📄 Report.pdf            # Analysis and results report
-├── 📄 testing.py            # Automated testing for various cases
-├── 📄 requirements.txt      # Dependency file
-├── 📄 LICENSE               # License information
-```
-
----
-
 ## Installation and Setup
 
 1. Clone this repository to your local machine:
@@ -76,12 +53,12 @@ The solver treats Sokoban as a state-space search problem and efficiently finds 
 
 1. **Solve a puzzle using A\***:
    ```bash
-   python src/mySokobanSolver.py --input data/warehouse_01.txt --algorithm astar
+   python mySokobanSolver.py --input data/warehouse_01.txt --algorithm astar
    ```
 
 2. **Solve a puzzle using BFS**:
    ```bash
-   python src/mySokobanSolver.py --input data/warehouse_01.txt --algorithm bfs
+   python mySokobanSolver.py --input data/warehouse_01.txt --algorithm bfs
    ```
 
 3. **Test all puzzles**:
@@ -104,10 +81,10 @@ jupyter notebook notebooks/sokobanTester.ipynb
 
 | Solver Type   | Solved Percentage | Average Solve Time |
 |---------------|-------------------|--------------------|
-| A\* (Macro)   | **90%**           | **1.5s**           |
-| A\* (Elem)    | **85%**           | **2.3s**           |
-| BFS (Macro)   | 70%               | 3.1s               |
-| BFS (Elem)    | 60%               | 5.0s               |
+| A\* (Macro)   | **68%**           | **6.4s**           |
+| A\* (Elem)    | **49.5%**           | **16.5s**           |
+| BFS (Macro)   | 65%               | 8.2s               |
+| BFS (Elem)    | 43.7%               | 12.9s               |
 
 ### Insights
 - **A\*** outperforms BFS in both accuracy and efficiency, thanks to heuristic-driven optimization.
