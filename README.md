@@ -90,8 +90,6 @@ jupyter notebook notebooks/sokobanTester.ipynb
 - **A\*** outperforms BFS in both accuracy and efficiency, thanks to heuristic-driven optimization.
 - Macro actions significantly reduce the search space, improving runtime.
 
-For more details, see the [Report.pdf](Report.pdf).
-
 ---
 
 ## Attribution
@@ -111,13 +109,6 @@ For more details, see the [Report.pdf](Report.pdf).
 - Implementing **dynamic box-target assignment** for better heuristics.
 - Exploring **reinforcement learning** or **deep learning** techniques.
 - Adding iterative deepening to manage memory usage.
-
----
-
-## Authors
-
-- **Zhiyun Pan**: Algorithm design, heuristic implementation, and report writing.
-- **Weng Chong Lao**: Code optimization, testing framework, and report finalization.
 
 ---
 
