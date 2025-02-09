@@ -10,6 +10,8 @@
 
 Sokoban is a classic puzzle game where a worker pushes boxes to designated target locations within a warehouse. It is a challenging task due to its large state-space complexity and the potential for deadlocks caused by irreversible moves. This project introduces an **AI Agent** designed to solve Sokoban puzzles using **A\*** and **BFS** algorithms, optimized with heuristics and search space reduction techniques.
 
+![CleanShot 2025-02-09 at 20 07 06@2x](https://github.com/user-attachments/assets/7b99b94f-863e-4c77-81bf-8789d3cc255d)
+
 The solver treats Sokoban as a state-space search problem and efficiently finds solutions for various puzzles by implementing:
 - **A\* Search**: Uses a heuristic-driven approach for optimal pathfinding.
 - **Breadth-First Search (BFS)**: Explores all states to ensure solutions, albeit less efficiently.
@@ -52,6 +54,8 @@ The solver treats Sokoban as a state-space search problem and efficiently finds 
 To run the Sokoban solver and its tests, execute the `testing.py` file, which contains various testing scenarios. Ensure you have the required files and dependencies in place.
 
 ### Example Usage
+
+![CleanShot 2025-02-09 at 20 08 07@2x](https://github.com/user-attachments/assets/bdfa8291-a05d-4897-8ec7-f46223d63983)
 
 1. **Run all tests and demonstrations:**
    ```bash
