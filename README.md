@@ -49,29 +49,55 @@ The solver treats Sokoban as a state-space search problem and efficiently finds 
 
 ## Usage
 
-### Running the Solver
+To run the Sokoban solver and its tests, execute the `testing.py` file, which contains various testing scenarios. Ensure you have the required files and dependencies in place.
 
-1. **Solve a puzzle using A\***:
-   ```bash
-   python mySokobanSolver.py --input data/warehouse_01.txt --algorithm astar
-   ```
+### Example Usage
 
-2. **Solve a puzzle using BFS**:
-   ```bash
-   python mySokobanSolver.py --input data/warehouse_01.txt --algorithm bfs
-   ```
-
-3. **Test all puzzles**:
+1. **Run all tests and demonstrations:**
    ```bash
    python testing.py
    ```
 
-### Testing in Jupyter Notebook
+   This will:
+   - Print the team information.
+   - Test the taboo cells calculation.
+   - Test the action sequence validation.
+   - Solve Sokoban puzzles using elementary actions and macro actions.
+   - Evaluate the `can_go_there` function for pathfinding.
+   - Test multiple warehouses using different configurations.
 
-Run the interactive notebook:
-```bash
-jupyter notebook notebooks/sokobanTester.ipynb
-```
+2. **Run specific test cases:**
+   Modify the `testing.py` script under the `if __name__ == '__main__':` block to focus on individual test functions like:
+   ```python
+   test_taboo_cells()
+   test_check_elem_action_seq()
+   test_solve_sokoban_elem()
+   test_can_go_there()
+   test_solve_sokoban_macro()
+   ```
+
+3. **Custom Warehouse Testing:**
+   Use the `testAll()` function to test a specific warehouse or a batch:
+   ```python
+   testAll(5)  # Tests warehouse 5 with elementary actions
+   testAll(5, macro=True)  # Tests warehouse 5 with macro actions
+   ```
+
+   To test all warehouses:
+   ```python
+   testAll()  # All warehouses with elementary actions
+   testAll(macro=True)  # All warehouses with macro actions
+   ```
+
+4. **Custom Box Limits and Timeout:**
+   Adjust the parameters in `testAll()` to experiment with custom configurations:
+   ```python
+   testAll(limit_of_boxes=100, timeout=300, macro=True)
+   ```
+
+### Output
+
+- Results will display directly in the console, including the status of each test, time taken, and whether the solver passed or failed the test.
 
 ---
 
